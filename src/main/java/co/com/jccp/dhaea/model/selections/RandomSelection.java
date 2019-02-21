@@ -13,7 +13,7 @@ public class RandomSelection<T> implements SelectionInterface<T> {
     @Override
     public MutableList<Individual<T>> applySelection(MutableList<Individual<T>> popToBeSelected, int selectionsNumber) {
 
-        return popToBeSelected.shuffleThis().subList(0,selectionsNumber);
+        return popToBeSelected.clone().shuffleThis().subList(0,selectionsNumber);
 
     }
 

@@ -1,20 +1,23 @@
-package co.com.jccp.dhaea.sequential;
+package co.com.jccp.dhaea.cpu;
 
 import co.com.jccp.dhaea.model.BasicHaeaIndividual;
 import co.com.jccp.dhaea.model.Individual;
 import co.com.jccp.dhaea.model.interfaces.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.impl.parallel.ParallelIterate;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by: Juan Camilo Castro Pinto
  **/
 @Data
 @Accessors(chain = true)
-public class HaeaSequential<T> {
+public class HaeaCpu<T> {
 
     private int generations;
 
@@ -36,8 +39,6 @@ public class HaeaSequential<T> {
 
     public void apply()
     {
-
-
         BasicHaeaIndividual<T> basicHaeaIndividual = new BasicHaeaIndividual<T>()
                 .setDimensions(dimensions)
                 .setFitnessFunction(fitnessFunction)
@@ -49,17 +50,20 @@ public class HaeaSequential<T> {
 
         for (int i = 0; i <= generations; i++) {
             MutableList<Individual<T>> population = populationHandlerFunction.getPopulation();
-            MutableList<Individual<T>> newPop = population.collectWith((each, gen) -> basicHaeaIndividual.apply(gen, each), i);
-
-
-//            for (int j = 0; j < population.size(); j++) {
-//                Individual<T> best = basicHaeaIndividual.apply(i, population.get(j));
-//            }
+            MutableList<Individual<T>> newPop = executeParallel(population, basicHaeaIndividual, i);
             populationHandlerFunction.updateAll(newPop, i);
         }
 
     }
 
+    private MutableList<Individual<T>> executeParallel(MutableList<Individual<T>> population, BasicHaeaIndividual<T> basicHaeaIndividual, int iteration)
+    {
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        ExecutorService threadPool = Executors.newFixedThreadPool(2);
+        int batchSize = population.size();
+
+        return ParallelIterate.collect(population, each -> basicHaeaIndividual.apply(iteration, each), new FastList<>(), batchSize, threadPool, false);
+    }
 
 
 

@@ -11,7 +11,7 @@ import java.util.Random;
 /**
  * Created by: Juan Camilo Castro Pinto
  **/
-public class UniformSelection<T> implements SelectionInterface<T> {
+public class RouletteSelection<T> implements SelectionInterface<T> {
 
     @Override
     public MutableList<Individual<T>> applySelection(MutableList<Individual<T>> popToBeSelected, int selectionsNumber) {

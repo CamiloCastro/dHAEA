@@ -1,7 +1,7 @@
 package co.com.jccp.dhaea.model;
 
 import co.com.jccp.dhaea.model.interfaces.*;
-import co.com.jccp.dhaea.model.selections.UniformSelection;
+import co.com.jccp.dhaea.model.selections.RouletteSelection;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,15 +26,13 @@ public class BasicHaeaIndividual<T> {
 
     private InitializationInterface<T> initializationFunction;
 
-    private GOPInterface<T>[] operators;
+    private MutableList<GOPInterface<T>> operators;
 
     private SelectionInterface<T> selectionFunction;
 
     private FitnessInterface<T> fitnessFunction;
 
-    private UpdateResultsInterface<T> updateFunction;
-
-    private GetPopulationInterface<T> getPopulationFunction;
+    private PopulationHandlerInterface<T> populationHandlerFunction;
 
     private T[][] limits;
 
@@ -44,23 +42,25 @@ public class BasicHaeaIndividual<T> {
         if(iteration == 0)
         {
             MutableList<T> data = initializationFunction.generateIndividual(dimensions, limits);
-            MutableDoubleList rates = new DoubleArrayList(operators.length);
-            for (int i = 0; i < operators.length; i++) {
-                rates.add(1.0/operators.length);
+            MutableDoubleList rates = new DoubleArrayList(operators.size());
+            for (int i = 0; i < operators.size(); i++) {
+                rates.add(1.0/operators.size());
             }
             double fitness = fitnessFunction.getFitness(data);
 
             return new Individual<T>().setData(data).setFitness(fitness).setRates(rates);
         }
 
-        UniformSelection us = new UniformSelection();
+        beforeIndividual = beforeIndividual.clone();
+
+        RouletteSelection us = new RouletteSelection();
 
         int gopPosition = us.getPositions(beforeIndividual.getRates(), 1).get(0);
-        GOPInterface<T> operator = operators[gopPosition];
+        GOPInterface<T> operator = operators.get(gopPosition);
 
         MutableList<Individual<T>> parents = new FastList<>(operator.getParentsNumber());
 
-        MutableList<Individual<T>> population = getPopulationFunction.getPopulation();
+        MutableList<Individual<T>> population = populationHandlerFunction.getPopulation();
 
         if(operator.getParentsNumber() > 1)
             parents = selectionFunction.applySelection(population, operator.getParentsNumber() - 1);
@@ -76,19 +76,16 @@ public class BasicHaeaIndividual<T> {
         if(bestOffspring.compareTo(beforeIndividual) == 0)
         {
             bestOffspring.setRates(modifyRates(-1, beforeIndividual.getRates(), gopPosition));
-            updateFunction.updateResults(iteration, bestOffspring);
             return bestOffspring;
         }
         else if(bestOffspring.compareTo(beforeIndividual) < 1 )
         {
             bestOffspring.setRates(modifyRates(1, beforeIndividual.getRates(), gopPosition));
-            updateFunction.updateResults(iteration, bestOffspring);
             return bestOffspring;
         }
         else
         {
             beforeIndividual.setRates(modifyRates(-1, beforeIndividual.getRates(), gopPosition));
-            updateFunction.updateResults(iteration, beforeIndividual);
             return beforeIndividual;
         }
 

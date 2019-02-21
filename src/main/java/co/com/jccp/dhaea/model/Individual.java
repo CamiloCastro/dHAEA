@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.list.primitive.MutableDoubleList;
+import org.eclipse.collections.impl.list.mutable.primitive.DoubleArrayList;
 
 /**
  * Created by: Juan Camilo Castro Pinto
@@ -25,5 +26,16 @@ public class Individual<T> implements Comparable<Individual<T>> {
         else if(fitness < o.getFitness())
             return -1;
         return 1;
+    }
+
+    @Override
+    public Individual<T> clone()
+    {
+
+        return new Individual<T>()
+                .setFitness(this.fitness)
+                .setRates(rates.collectDouble(value -> value, new DoubleArrayList()))
+                .setData(data.collect(each -> each));
+
     }
 }
